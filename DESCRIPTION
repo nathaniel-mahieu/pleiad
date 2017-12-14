@@ -1,0 +1,11 @@
+Package: pleiad
+Type: Package
+Title: Targeted LC/MS analysis. Isotopes. DTW.
+Version: 0.1.1
+Author: Nathaniel Mahieu <nathaniel.mahieu@wustl.edu>
+Maintainer: Nathaniel Mahieu <nathaniel.mahieu@wustl.edu>
+Description: Preprocessed Data Analysis
+Encoding: UTF-8
+LazyData: true
+Depends: data.table, magrittr, dtw, ggplot2, hrbrthemes, foreach, doParallel, Rdisop
+RoxygenNote: 6.0.0

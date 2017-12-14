@@ -1,0 +1,2 @@
+name,abbreviation,formula,rt.file,rt.alignmin,rt.alignmax,rt.usemin,rt.usemax,rt.polarity
+glutamine,gln,C5H10N2O3,file_1.mzXML,260,310,282,290,neg

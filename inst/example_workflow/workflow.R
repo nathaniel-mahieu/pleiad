@@ -64,9 +64,58 @@ mz. = mz("glu", .ion = "-H")
 align.trace = align.file$k[,.SD[which.min(abs(mz-mz.))],by=.(s)][align.file$s,,on=.(s)][,.(mz, i, rt)]
 align.trace[abs(rt-200)<100,.(rt, i)][,.(rt,i)] %>%  ggplot() + geom_line(aes(x=rt, y = i))
 
-# Extract the data
-analysis = targeted_isotopologues(ms_list.l = ms_list.l, target.mz = mz., align.trace = align.trace, align.window.size=10, align.rtrange = c(200, 250), align.rtuserange = c(220, 240), align.saroundmax = 6, C =0:6, N = 0:2, H = 0, maxppm = 4)
 
-summarize_targeted_isotopologues(analysis, name = metab$name, timestamp = timestamp.)
-plot_targeted_isotopologues(analysis$spectra)
+# Extract the data
+analysis = { # See: targeted_isotopologues()
+
+  align.window.size = 10
+  align.rtrange = c(200, 250)
+  align.rtuserange = c(220, 240)
+  align.saroundmax = 6
+  C = 0:6
+  N = 0:2
+  H = 0
+  maxppm = 4
+
+  anal.l = foreach(ms_list = ms_list.l, .packages = c("pleiad")) %dopar% { cat(ms_list$metadata$file, " | ")
+    anal = dtw_getspecs(ms_list = ms_list, align.mz = mz., align.trace = align.trace, align.rtrange = align.rtrange, align.rtuserange = align.rtuserange, window.size = align.window.size)
+
+    anal$subspecs = subspec_nearestmasses(isotopologues.combn(mz., C=C, N=N, H=H), anal$specs)
+    anal$subspecs = subspec_masscorrect(anal$subspecs, maxppm = maxppm)
+
+    anal$spectra = subspec_spectra(anal$subspecs, s.aroundmax = align.saroundmax, id.cols=c("C", "N", "H", "align.rtuserange", "align.rtrange"), maxppm = maxppm)
+
+    anal$metadata = ms_list$metadata$factors
+
+    anal
+  }
+
+  tmp = list()
+  tmp$rawdata = anal.l
+
+  tmp$spectra = lapply(seq_along(anal.l), function(i.) {
+    anal.l[[i.]]$spectra[,file:=i.]
+  }) %>% do.call(what=rbind)
+
+  metadata = lapply(anal.l, '[[', "metadata") %>% do.call(what = rbind) %>% data.table %>% { colnames(.) = names(anal.l[[1]]$metadata); .[,file := seq_len(.N)] }
+
+  tmp$spectra = tmp$spectra[metadata,,on=.(file),nomatch=0]
+
+  tmp
+  }
+
+#Save the data
+saveRDS(analysis, paste0(metab$name, "_analysis.rds"))
+analysis$spectra %>% { write.csv(., file=paste0(metab$name, "_analysis.spectra.", substr(head(.$subspec,n=1), 0, 75) ,".csv"), row.names = F) }
+
+
+#Plot some data
+analysis$spectra %>% ggplot(aes(x=interaction(C, N, H), y=i.norm, fill = interaction(C>0, N>0, H>0))) +
+  geom_boxplot(position=position_dodge(2)) +
+  facet_wrap(~file, scales="free") +
+  ggtitle(paste0("Relative Abundance of Isotopologues"), "Isotope counts coded as: C.N.H") +
+  scale_x_discrete(drop=T) + scale_color_brewer(palette = "Set1")
+
+
+# QC Plots
 plot_targeted_isotopologues_qc(analysis)

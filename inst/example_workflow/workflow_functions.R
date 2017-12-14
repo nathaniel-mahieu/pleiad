@@ -47,30 +47,6 @@ targeted_isotopologues = function(ms_list.l, target.mz, align.trace, align.rtran
   tmp
 }
 
-summarize_targeted_isotopologues = function(analysis, name = "unnamed", timestamp. = round(as.numeric(Sys.time()))) {
-
-  folder = paste0("analysis_", timestamp.)
-  dir.create(folder, showWarnings = FALSE)
-
-  saveRDS(analysis, file.path(folder, paste0(name, "_analysis.rds")))
-
-  for (dt in split(analysis$spectra, by="subspec")) {
-    dt %>% write.csv(file=file.path(folder, paste0(name, "_analysis.spectra.", substr(head(dt$subspec,n=1), 0, 75) ,".csv")), row.names = F)
-  }
-
-  return(T)
-}
-
-
-plot_targeted_isotopologues = function(spectra) {
-
-  spectra %>% ggplot(aes(x=interaction(C, N, H), y=i.norm, fill = interaction(C>0, N>0, H>0))) +
-    geom_boxplot(position=position_dodge(2)) +
-    facet_wrap(~file, scales="free") +
-    ggtitle(paste0("Relative Abundance of Isotopologues"), "Isotope counts coded as: C.N.H") +
-    scale_x_discrete(drop=T) + scale_color_brewer(palette = "Set1")
-
-}
 
 plot_targeted_isotopologues_qc = function(analysis) {
   # Region QC
